@@ -1,5 +1,53 @@
 //Storage Controller
-
+const StorageCtrl = (function(){
+    //Public functions
+    return{
+        addToStorage:function(item){
+            let items;
+            if(localStorage.getItem('items') === null){
+                items = [];
+                items.push(item);
+                localStorage.setItem('items', JSON.stringify(items));
+            } else {
+                items = JSON.parse(localStorage.getItem('items'));
+                items.push(item);
+                localStorage.setItem('items', JSON.stringify(items));
+            }
+        },
+        fetchFromStorage:function(){
+            let items;
+            if(localStorage.getItem('items') === null){
+                items = [];
+            } else {
+                items = JSON.parse(localStorage.getItem('items'));
+            }
+            return items;
+        },
+        updateStorage:function(update){
+            let items = JSON.parse(localStorage.getItem('items'));
+            items.forEach((item, index)=>{
+                if(item.id === update.id){
+                    items.splice(index, 1, update);
+                }
+            });
+            localStorage.setItem('items', JSON.stringify(items));
+        }, 
+        deleteFromStorage:function(deletedId){
+            let items = JSON.parse(localStorage.getItem('items'));
+            let ids = items.map((item)=>{
+                return item.id;
+            });
+            items.splice(ids.indexOf(deletedId), 1);
+            localStorage.setItem('items', JSON.stringify(items));
+        },
+        clearAll(){
+            // let items = JSON.parse(localStorage.getItem('items'));
+            // items = [];
+            // localStorage.setItem('items', JSON.stringify(items));
+            localStorage.removeItem('items');
+        }
+    }
+})();
 
 //Item Contoller
 const ItemCtrl = (function(){
@@ -10,11 +58,7 @@ const ItemCtrl = (function(){
     }
     //Data Structure
     const data = {
-        items:[
-            // {id: 0, name: 'Steak Dinner', calories: 1200},
-            // {id: 1, name: 'Cookie', calories: 400},
-            // {id: 2, name: 'Eggs', calories: 300}
-        ],
+        items: StorageCtrl.fetchFromStorage(),
         currentItem: null,
         totalCalories: 0
     }
@@ -194,7 +238,7 @@ const UICtrl = (function(){
 
 
 //App Controller
-const App = (function(ItemCtrl, UICtrl){
+const App = (function(ItemCtrl, StorageCtrl, UICtrl){
     //load event listeners
     const loadEventListeners = function(){
         const UISelectors = UICtrl.getSelectors();
@@ -239,6 +283,9 @@ const App = (function(ItemCtrl, UICtrl){
             const totalCalories = ItemCtrl.getTotalCalories();
             UICtrl.updateCalories(totalCalories);
 
+            //Set to local Storage
+            StorageCtrl.addToStorage(newItem);
+
             //Clear input fields
             UICtrl.clearInput();
 
@@ -269,6 +316,7 @@ const App = (function(ItemCtrl, UICtrl){
         UICtrl.updateEdit(updatedItem);
         const totalCalories = ItemCtrl.getTotalCalories();
         UICtrl.updateCalories(totalCalories);
+        StorageCtrl.updateStorage(updatedItem);
         UICtrl.clearEditState();
         e.preventDefault();
     }
@@ -276,6 +324,7 @@ const App = (function(ItemCtrl, UICtrl){
         let currentItem = ItemCtrl.getCurrentItem();
         ItemCtrl.deleteItem(currentItem.id);
         UICtrl.deleteListItem(currentItem.id);
+        StorageCtrl.deleteFromStorage(currentItem.id);
         const totalCalories = ItemCtrl.getTotalCalories();
         UICtrl.updateCalories(totalCalories);
         UICtrl.clearEditState();
@@ -290,6 +339,7 @@ const App = (function(ItemCtrl, UICtrl){
         const totalCalories = ItemCtrl.getTotalCalories();
         UICtrl.updateCalories(totalCalories);
         UICtrl.clearList();
+        StorageCtrl.clearAll();
         UICtrl.hideList();
         e.preventDefault();
     }
@@ -312,9 +362,6 @@ const App = (function(ItemCtrl, UICtrl){
         }
     }
 
-})(ItemCtrl, UICtrl);
+})(ItemCtrl, StorageCtrl, UICtrl);
 
 App.init()
-
-
-
